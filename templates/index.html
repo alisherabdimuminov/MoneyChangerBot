@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoneyChangeBot</title>
+</head>
+<body>
+    <style>
+        .cards{
+            display: flex;
+            margin: 5px;
+            padding: 5px;
+        }
+        .bottom {
+            margin: 10px;
+            padding: 10px;
+        }
+
+        .left{
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1px;
+        }
+        .right{
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1px;
+        }
+        :root {
+            --primary-color: #07afd9;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #1e2b35;
+            font-family: 'Autour One';
+            color: white;
+            margin: 10px;
+        }
+        input[type="radio"]{
+            display: none;
+        }
+        label{
+            width: 100%;
+            position: relative;
+            color: #fff;
+            cursor: pointer;
+            display: inline-flex;
+            gap: 0.8em;
+            border: 1px solid #fff;
+            padding: 1em 2em;
+            border-radius: 0.5em;
+            align-items: center;
+            margin: 5px;
+        }
+        label::before{
+            content: "";
+            height: 10px;
+            width: 10px;
+            border: 3px solid #fff;
+            border-radius: 50%;
+        }
+
+        input[type="radio"]:checked + label::before{
+            border: 3px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        input[type="radio"]:checked + label {
+            border: 3px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+        input[type="number"] {
+            border: 1px solid #ccc;
+            background: transparent;
+            outline: none;
+            border-radius: 8px;
+            height: 40px;
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
+            padding: 5px;
+            margin: 5px;
+        }
+    </style>
+    <div class="cards">
+        <div class="left" id="left">
+            <p>Card 1</p>
+        </div>
+        <div class="right" id="right">
+        </div>
+    </div>
+    <div class="bottom">
+        <p id="card_name_1">Berish</p>
+        <input type="number" type="text" name="card_number_1" id="card_number_1" maxlength="3" />
+        <p id="card_name_2">Olish</p>
+        <input type="number" type="text" name="card_number_2" id="card_number_2" />
+        <p>Summa</p>
+        <input type="number" type="text" name="summa" id="summa" /> <br>
+    </div>
+    <script>
+        async function getCards() {
+            let left = document.getElementById("left");
+            let right = document.getElementById("right");
+            const response = await fetch("http://127.0.0.1:8000/api/cards/");
+            const cards = await response.json();
+            for (let i = 0; i < cards.length; i++) {
+                let input = document.createElement("input");
+                let label = document.createElement("label");
+                input.name = `card1`;
+                input.id = `card${i}`;
+                input.type = `radio`;
+                input.setAttribute("card-name", `${cards[i].name}`);
+                input.setAttribute("card-example", `${cards[i].example}`);
+                input.setAttribute("card-id", `${cards[i].id}`)
+                input.setAttribute("onchange", "{onChange();onSelect()}")
+                label.setAttribute("for", `card${i}`)
+                label.innerHTML = `${cards[i].name}`;
+                left.appendChild(input);
+                left.appendChild(label)
+            }
+            
+        }
+        getCards();
+
+        function onChange(event) {
+            let cards = document.getElementsByName("card1");
+            for (let i = 0; i < cards.length; i++) {
+                if (cards[i].checked) {
+                    let right = document.getElementById("right");
+                    right.innerHTML = "<p>Card 2</p>"
+                    async function getAllowedCards() {
+                        const response = await fetch(`http://127.0.0.1:8000/api/cards/${cards[i].getAttribute("card-id")}/`);
+                        const allowed_cards = await response.json();
+                        for (let i = 0; i < allowed_cards.length; i++) {
+                            let rinput = document.createElement("input");
+                            let rlabel = document.createElement("label");
+                            rinput.name = `card2`;
+                            rinput.type = "radio";
+                            rinput.id = `rcard${i}`;
+                            rinput.setAttribute("card-name", `${allowed_cards[i].name}`);
+                            rinput.setAttribute("card-example", `${allowed_cards[i].example}`);
+                            rinput.setAttribute("onchange", "onSelect()")
+                            rlabel.setAttribute("for", `rcard${i}`);
+                            rlabel.innerHTML = `${allowed_cards[i].name}`;
+                            right.appendChild(rinput);
+                            right.appendChild(rlabel);
+                        }
+                    };
+                    getAllowedCards();
+                }
+            }
+        }
+    </script>
+    <script>
+        function onSelect(event) {
+            let card_name_1 = document.getElementById("card_name_1");
+            let card_name_2 = document.getElementById("card_name_2");
+            let cards1 = document.getElementsByName("card1");
+            let cards2 = document.getElementsByName("card2");
+            let card_number_1 = document.getElementById("card_number_1");
+            let card_number_2 = document.getElementById("card_number_2");
+            for (let i = 0; i < cards1.length; i++) {
+                if (cards1[i].checked) {
+                    card_name_1.innerHTML = `${cards1[i].getAttribute("card-name")}`;
+                    card_number_1.setAttribute("placeholder", `${cards1[i].getAttribute("card-example")}`);
+                }
+            }
+            for (let i = 0; i < cards2.length; i++) {
+                if (cards2[i].checked) {
+                    card_name_2.innerHTML = `${cards2[i].getAttribute("card-name")}`;
+                    card_number_2.setAttribute("placeholder", `${cards2[i].getAttribute("card-example")}`);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
